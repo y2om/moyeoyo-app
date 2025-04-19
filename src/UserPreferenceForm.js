@@ -10,6 +10,8 @@ const interestsList = [
 
 const UserPreferenceForm = ({ onSave }) => {
     const [interests, setInterests] = useState([]);
+    const [availableTimes, setAvailableTimes] = useState([]);
+    const [date, setDate] = useState("");
     const [timeStart, setTimeStart] = useState("09:00");
     const [timeEnd, setTimeEnd] = useState("18:00");
     const [gender, setGender] = useState("");
@@ -21,9 +23,19 @@ const UserPreferenceForm = ({ onSave }) => {
         );
     };
 
+    const handleAddTime = () => {
+        if (date && timeStart && timeEnd) {
+            setAvailableTimes((prev) => [
+                ...prev,
+                { date, timeRange: `${timeStart} ~ ${timeEnd}` },
+            ]);
+            setDate("");
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({ interests, timeRange: `${timeStart} ~ ${timeEnd}`, gender, ageGroup });
+        onSave({ interests, availableTimes, gender, ageGroup });
     };
 
     return (
@@ -78,8 +90,14 @@ const UserPreferenceForm = ({ onSave }) => {
                 ))}
             </div>
 
-            <h3 style={{ marginTop: "1.5rem" }}>참여 가능 시간 (24시간)</h3>
-            <div style={{ display: "flex", gap: "10px" }}>
+            <h3 style={{ marginTop: "1.5rem" }}>참여 가능한 날짜 및 시간</h3>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "1rem" }}>
+                <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    required
+                />
                 <input
                     type="time"
                     value={timeStart}
@@ -93,7 +111,20 @@ const UserPreferenceForm = ({ onSave }) => {
                     onChange={(e) => setTimeEnd(e.target.value)}
                     required
                 />
+                <button type="button" onClick={handleAddTime}>
+                    추가하기
+                </button>
             </div>
+
+            {availableTimes.length > 0 && (
+                <ul style={{ marginTop: "1rem" }}>
+                    {availableTimes.map((item, idx) => (
+                        <li key={idx}>
+                            📅 {item.date} | ⏰ {item.timeRange}
+                        </li>
+                    ))}
+                </ul>
+            )}
 
             <button
                 type="submit"
