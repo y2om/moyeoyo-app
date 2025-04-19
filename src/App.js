@@ -1,11 +1,14 @@
-﻿import React from "react";
+﻿import React, { useState } from "react";
 import KakaoLoginButton from "./KakaoLoginButton";
 import UserPreferenceForm from "./UserPreferenceForm";
+import MyPage from "./MyPage";
 import { setDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 
 function App() {
     const user = JSON.parse(localStorage.getItem("user"));
+    const [showMyPage, setShowMyPage] = useState(false);
+    const [hasSaved, setHasSaved] = useState(false);
 
     const handlePreferenceSave = async (data) => {
         try {
@@ -15,6 +18,7 @@ function App() {
                 updatedAt: new Date(),
             });
             alert("✅ 관심사 및 시간이 저장되었습니다!");
+            setHasSaved(true);
         } catch (error) {
             console.error("❌ Firestore 저장 실패", error);
         }
@@ -71,27 +75,46 @@ function App() {
                 </div>
             ) : (
                 <div style={{ padding: "2rem" }}>
-                    <button
-                        onClick={logoutFromKakao}
-                        style={{
-                            position: "absolute",
-                            top: "20px",
-                            right: "20px",
-                            backgroundColor: "#ddd",
-                            border: "none",
-                            padding: "8px 16px",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            cursor: "pointer",
-                        }}
-                    >
-                        로그아웃
-                    </button>
+                    <div style={{ position: "absolute", top: "20px", right: "20px", display: "flex", gap: "10px" }}>
+                        <button
+                            onClick={() => setShowMyPage((prev) => !prev)}
+                            style={{
+                                backgroundColor: "#007bff",
+                                color: "white",
+                                padding: "8px 16px",
+                                border: "none",
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            {showMyPage ? "돌아가기" : "내 정보 수정"}
+                        </button>
+
+                        <button
+                            onClick={logoutFromKakao}
+                            style={{
+                                backgroundColor: "#ddd",
+                                border: "none",
+                                padding: "8px 16px",
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            로그아웃
+                        </button>
+                    </div>
 
                     <h1>모여요 - 청년 교류 매칭 서비스</h1>
                     <h2>{user.nickname}님 안녕하세요 👋</h2>
                     <p>{user.email}</p>
-                    <UserPreferenceForm onSave={handlePreferenceSave} />
+
+                    {showMyPage || hasSaved ? (
+                        <MyPage />
+                    ) : (
+                        <UserPreferenceForm onSave={handlePreferenceSave} />
+                    )}
                 </div>
             )}
         </div>

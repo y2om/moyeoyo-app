@@ -41,7 +41,7 @@ const UserPreferenceForm = ({ onSave }) => {
     return (
         <form onSubmit={handleSubmit} style={{ marginTop: "2rem" }}>
             <h3>성별</h3>
-            <div style={{ display: "flex", gap: "10px", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
                 {['남자', '여자', '무응답'].map((option) => (
                     <label key={option}>
                         <input
@@ -50,13 +50,14 @@ const UserPreferenceForm = ({ onSave }) => {
                             value={option}
                             checked={gender === option}
                             onChange={(e) => setGender(e.target.value)}
-                        /> {option}
+                        />{" "}{option}
                     </label>
                 ))}
             </div>
 
+
             <h3>나이대</h3>
-            <div style={{ display: "flex", gap: "10px", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
                 {['20대', '30대'].map((option) => (
                     <label key={option}>
                         <input
@@ -65,10 +66,11 @@ const UserPreferenceForm = ({ onSave }) => {
                             value={option}
                             checked={ageGroup === option}
                             onChange={(e) => setAgeGroup(e.target.value)}
-                        /> {option}
+                        />{" "}{option}
                     </label>
                 ))}
             </div>
+
 
             <h3>관심사 선택</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
