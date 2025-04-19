@@ -2,6 +2,7 @@
 import KakaoLoginButton from "./KakaoLoginButton";
 import UserPreferenceForm from "./UserPreferenceForm";
 import MyPage from "./MyPage";
+import AdminPage from "./AdminPage";
 import { setDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -9,6 +10,7 @@ function App() {
     const user = JSON.parse(localStorage.getItem("user"));
     const [showMyPage, setShowMyPage] = useState(false);
     const [hasSaved, setHasSaved] = useState(false);
+    const [showAdminPage, setShowAdminPage] = useState(false);
 
     const handlePreferenceSave = async (data) => {
         try {
@@ -90,7 +92,20 @@ function App() {
                         >
                             {showMyPage ? "돌아가기" : "내 정보 수정"}
                         </button>
-
+                        <button
+                            onClick={() => setShowAdminPage((prev) => !prev)}
+                            style={{
+                                backgroundColor: "#6c757d",
+                                color: "white",
+                                padding: "8px 16px",
+                                border: "none",
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            {showAdminPage ? "사용자 화면" : "관리자 페이지"}
+                        </button>
                         <button
                             onClick={logoutFromKakao}
                             style={{
@@ -110,7 +125,9 @@ function App() {
                     <h2>{user.nickname}님 안녕하세요 👋</h2>
                     <p>{user.email}</p>
 
-                    {showMyPage || hasSaved ? (
+                    {showAdminPage ? (
+                        <AdminPage />
+                    ) : showMyPage || hasSaved ? (
                         <MyPage />
                     ) : (
                         <UserPreferenceForm onSave={handlePreferenceSave} />
