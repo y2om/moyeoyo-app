@@ -7,6 +7,7 @@ const AdminPage = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [matchingGroups, setMatchingGroups] = useState([]);
+    const [groupSize, setGroupSize] = useState(3);
     const user = JSON.parse(localStorage.getItem("user"));
 
     useEffect(() => {
@@ -32,35 +33,46 @@ const AdminPage = () => {
                 if (used.has(users[j].email)) continue;
 
                 const sharedInterests = users[i].interests?.filter(item => users[j].interests?.includes(item));
-                const timeOverlap = users[i].availableTimes?.some(t1 =>
-                    users[j].availableTimes?.some(t2 => t1.timeRange === t2.timeRange)
+
+                const dateTimeOverlap = users[i].availableTimes?.some(t1 =>
+                    users[j].availableTimes?.some(t2 => t1.date === t2.date && t1.timeRange === t2.timeRange)
                 );
 
-                if (sharedInterests?.length > 0 && timeOverlap) {
+                if (sharedInterests?.length > 0 && dateTimeOverlap) {
                     group.push(users[j]);
                 }
 
-                if (group.length >= 3) break;
+                if (group.length >= groupSize) break;
             }
 
             if (group.length >= 2) {
                 group.forEach(u => used.add(u.email));
+                const commonAvailableTime = group[0].availableTimes?.find(time =>
+                    group.every(member =>
+                        member.availableTimes?.some(t => t.date === time.date && t.timeRange === time.timeRange)
+                    )
+                );
+
                 matches.push({
                     id: uuidv4(),
                     members: group.map(u => u.email),
-                    commonInterests: group.reduce((acc, cur) =>
-                        acc.filter(item => cur.interests?.includes(item))
-                        , group[0].interests || []),
-                    timeRange: group[0].availableTimes?.[0]?.timeRange || "",
+                    commonInterests: group.reduce((acc, cur) => acc.filter(item => cur.interests?.includes(item)), group[0].interests || []),
+                    date: commonAvailableTime?.date || "",
+                    timeRange: commonAvailableTime?.timeRange || "",
                 });
             }
         }
 
         setMatchingGroups(matches);
-        matches.forEach(async (match) => {
-            await setDoc(doc(db, "matchingGroups", match.id), match);
-        });
-        alert("✅ 자동 매칭이 완료되었습니다!");
+
+        if (matches.length === 0) {
+            alert("😢 조건에 맞는 매칭 그룹이 없습니다.");
+        } else {
+            matches.forEach(async (match) => {
+                await setDoc(doc(db, "matchingGroups", match.id), match);
+            });
+            alert("✅ 날짜 포함 자동 매칭이 완료되었습니다!");
+        }
     };
 
     if (!user || user.email !== "ybhss1418@naver.com") {
@@ -72,6 +84,18 @@ const AdminPage = () => {
     return (
         <div style={{ padding: "2rem" }}>
             <h2>📋 관리자 페이지 - 사용자 목록</h2>
+
+            <div style={{ marginBottom: "10px" }}>
+                <label>👥 그룹 최대 인원 수: </label>
+                <input
+                    type="number"
+                    value={groupSize}
+                    onChange={(e) => setGroupSize(parseInt(e.target.value) || 2)}
+                    min="2"
+                    max="10"
+                    style={{ width: "60px", marginLeft: "10px" }}
+                />
+            </div>
 
             <button
                 onClick={handleAutoMatch}
@@ -96,7 +120,7 @@ const AdminPage = () => {
                             <strong>그룹 {idx + 1}:</strong>
                             <p>👥 {group.members.join(", ")}</p>
                             <p>🎯 공통 관심사: {group.commonInterests.join(", ")}</p>
-                            <p>⏰ 시간대: {group.timeRange}</p>
+                            <p>📅 날짜: {group.date} | ⏰ 시간: {group.timeRange}</p>
                         </div>
                     ))}
                 </div>

@@ -19,30 +19,52 @@ const UserPreferenceForm = ({ onSave }) => {
 
     const toggleInterest = (item) => {
         setInterests((prev) =>
-            prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+            prev.includes(item)
+                ? prev.filter((i) => i !== item)
+                : [...prev, item]
         );
     };
 
     const handleAddTime = () => {
-        if (date && timeStart && timeEnd) {
-            setAvailableTimes((prev) => [
-                ...prev,
-                { date, timeRange: `${timeStart} ~ ${timeEnd}` },
-            ]);
-            setDate("");
+        if (!date || !timeStart || !timeEnd) {
+            alert("⛔ 날짜 및 시간을 모두 입력해주세요.");
+            return;
         }
+
+        const newEntry = { date, timeRange: `${timeStart} ~ ${timeEnd}` };
+
+        const exists = availableTimes.some(
+            (entry) => entry.date === newEntry.date && entry.timeRange === newEntry.timeRange
+        );
+
+        if (!exists) {
+            setAvailableTimes((prev) => [...prev, newEntry]);
+        }
+
+        setDate("");
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({ interests, availableTimes, gender, ageGroup });
+
+        if (availableTimes.length === 0) {
+            alert("⛔ 최소 1개의 참여 가능한 날짜 및 시간을 추가해주세요.");
+            return;
+        }
+
+        onSave({
+            interests,
+            availableTimes,
+            gender,
+            ageGroup,
+        });
     };
 
     return (
         <form onSubmit={handleSubmit} style={{ marginTop: "2rem" }}>
             <h3>성별</h3>
-            <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
-                {['남자', '여자', '무응답'].map((option) => (
+            <div style={{ display: "flex", gap: "10px", marginBottom: "1rem" }}>
+                {["남자", "여자", "무응답"].map((option) => (
                     <label key={option}>
                         <input
                             type="radio"
@@ -50,15 +72,15 @@ const UserPreferenceForm = ({ onSave }) => {
                             value={option}
                             checked={gender === option}
                             onChange={(e) => setGender(e.target.value)}
-                        />{" "}{option}
+                        />{" "}
+                        {option}
                     </label>
                 ))}
             </div>
 
-
             <h3>나이대</h3>
-            <div style={{ display: "flex", flexDirection: "row", gap: "10px" }}>
-                {['20대', '30대'].map((option) => (
+            <div style={{ display: "flex", gap: "10px", marginBottom: "1rem" }}>
+                {["20대", "30대"].map((option) => (
                     <label key={option}>
                         <input
                             type="radio"
@@ -66,11 +88,11 @@ const UserPreferenceForm = ({ onSave }) => {
                             value={option}
                             checked={ageGroup === option}
                             onChange={(e) => setAgeGroup(e.target.value)}
-                        />{" "}{option}
+                        />{" "}
+                        {option}
                     </label>
                 ))}
             </div>
-
 
             <h3>관심사 선택</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
@@ -98,20 +120,17 @@ const UserPreferenceForm = ({ onSave }) => {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    required
                 />
                 <input
                     type="time"
                     value={timeStart}
                     onChange={(e) => setTimeStart(e.target.value)}
-                    required
                 />
                 <span>~</span>
                 <input
                     type="time"
                     value={timeEnd}
                     onChange={(e) => setTimeEnd(e.target.value)}
-                    required
                 />
                 <button type="button" onClick={handleAddTime}>
                     추가하기
