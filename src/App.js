@@ -1,16 +1,13 @@
 ﻿import React, { useState } from "react";
 import KakaoLoginButton from "./KakaoLoginButton";
 import UserPreferenceForm from "./UserPreferenceForm";
-import MyPage from "./MyPage";
 import AdminPage from "./AdminPage";
 import { setDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 
 function App() {
     const user = JSON.parse(localStorage.getItem("user"));
-    const [showMyPage, setShowMyPage] = useState(false);
-    const [hasSaved, setHasSaved] = useState(false);
-    const [showAdminPage, setShowAdminPage] = useState(false);
+    const [view, setView] = useState("main"); // 'main' | 'admin'
 
     const handlePreferenceSave = async (data) => {
         try {
@@ -20,7 +17,6 @@ function App() {
                 updatedAt: new Date(),
             });
             alert("✅ 관심사 및 시간이 저장되었습니다!");
-            setHasSaved(true);
         } catch (error) {
             console.error("❌ Firestore 저장 실패", error);
         }
@@ -39,100 +35,103 @@ function App() {
         }
     };
 
-    return (
-        <div style={{ fontFamily: "Noto Sans KR, sans-serif", position: "relative", minHeight: "100vh" }}>
-            {!user ? (
+    if (!user) {
+        return (
+            <div
+                style={{
+                    backgroundImage: "url('/background.jpg')",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    height: "100vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+            >
                 <div
                     style={{
-                        backgroundImage: "url('/background.jpg')",
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        height: "100vh",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        backgroundColor: "rgba(0, 0, 0, 0.5)",
+                        padding: "40px",
+                        borderRadius: "12px",
+                        textAlign: "center",
                     }}
                 >
-                    <div
+                    <h1
                         style={{
-                            backgroundColor: "rgba(0, 0, 0, 0.5)",
-                            padding: "40px",
-                            borderRadius: "12px",
-                            textAlign: "center",
+                            fontSize: "2.5rem",
+                            color: "#fff",
+                            marginBottom: "20px",
+                            textShadow: "2px 2px 6px rgba(0,0,0,0.6)",
                         }}
                     >
-                        <h1
-                            style={{
-                                fontSize: "2.5rem",
-                                color: "#fff",
-                                marginBottom: "20px",
-                                textShadow: "2px 2px 6px rgba(0,0,0,0.6)",
-                            }}
-                        >
-                            모여요
-                        </h1>
-                        <KakaoLoginButton />
-                    </div>
+                        모여요
+                    </h1>
+                    <KakaoLoginButton />
                 </div>
-            ) : (
-                <div style={{ padding: "2rem" }}>
-                    <div style={{ position: "absolute", top: "20px", right: "20px", display: "flex", gap: "10px" }}>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ fontFamily: "Noto Sans KR, sans-serif", position: "relative", minHeight: "100vh", padding: "2rem" }}>
+            {/* 오른쪽 상단 버튼 */}
+            <div style={{ position: "absolute", top: "20px", right: "20px", display: "flex", gap: "10px" }}>
+                {user.email === "ybhss1418@naver.com" && (
+                    <>
                         <button
-                            onClick={() => setShowMyPage((prev) => !prev)}
+                            onClick={() => setView("main")}
                             style={{
                                 backgroundColor: "#007bff",
-                                color: "white",
-                                padding: "8px 16px",
+                                color: "#fff",
                                 border: "none",
+                                padding: "8px 12px",
                                 borderRadius: "6px",
-                                fontSize: "14px",
                                 cursor: "pointer",
                             }}
                         >
-                            {showMyPage ? "돌아가기" : "내 정보 수정"}
+                            사용자 화면
                         </button>
                         <button
-                            onClick={() => setShowAdminPage((prev) => !prev)}
+                            onClick={() => setView("admin")}
                             style={{
                                 backgroundColor: "#6c757d",
-                                color: "white",
-                                padding: "8px 16px",
+                                color: "#fff",
                                 border: "none",
+                                padding: "8px 12px",
                                 borderRadius: "6px",
-                                fontSize: "14px",
                                 cursor: "pointer",
                             }}
                         >
-                            {showAdminPage ? "사용자 화면" : "관리자 페이지"}
+                            관리자 페이지
                         </button>
-                        <button
-                            onClick={logoutFromKakao}
-                            style={{
-                                backgroundColor: "#ddd",
-                                border: "none",
-                                padding: "8px 16px",
-                                borderRadius: "6px",
-                                fontSize: "14px",
-                                cursor: "pointer",
-                            }}
-                        >
-                            로그아웃
-                        </button>
-                    </div>
+                    </>
+                )}
+                <button
+                    onClick={logoutFromKakao}
+                    style={{
+                        backgroundColor: "#ddd",
+                        border: "none",
+                        padding: "8px 16px",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        cursor: "pointer",
+                    }}
+                >
+                    로그아웃
+                </button>
+            </div>
 
+            {/* 본문 */}
+            {view === "admin" && user.email === "ybhss1418@naver.com" ? (
+                <AdminPage />
+            ) : (
+                <>
                     <h1>모여요 - 청년 교류 매칭 서비스</h1>
                     <h2>{user.nickname}님 안녕하세요 👋</h2>
                     <p>{user.email}</p>
-
-                    {showAdminPage ? (
-                        <AdminPage />
-                    ) : showMyPage || hasSaved ? (
-                        <MyPage />
-                    ) : (
-                        <UserPreferenceForm onSave={handlePreferenceSave} />
-                    )}
-                </div>
+                    <UserPreferenceForm onSave={handlePreferenceSave} />
+                </>
             )}
         </div>
     );
