@@ -1,6 +1,4 @@
 ﻿import { useState } from "react";
-import { db } from "./firebase";
-import { doc, setDoc } from "firebase/firestore";
 
 const interestsList = [
     "🎬 영화", "💪 운동", "📚 독서", "🎮 게임", "🎧 음악",
@@ -10,17 +8,43 @@ const interestsList = [
     "🏕️ 캠핑", "☕ 카페 탐방"
 ];
 
+const seoulDistricts = [
+    "강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구",
+    "노원구", "도봉구", "동대문구", "동작구", "마포구", "서대문구", "서초구",
+    "성동구", "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구",
+    "종로구", "중구", "중랑구"
+];
+
+const traitOptions = [
+    "🗣️ 활발한 대화를 좋아해요",
+    "🤫 조용한 분위기를 선호해요",
+    "👋 처음 보는 사람과 금방 친해져요",
+    "🧍 익숙해지기까지 시간이 좀 걸려요",
+    "🧭 주도적으로 활동하는 걸 좋아해요",
+    "🧑‍🤝‍🧑 따라가는 게 편해요",
+    "🌞 밝고 유쾌한 분위기",
+    "🌙 차분하고 조용한 분위기"
+];
+
 const UserPreferenceForm = ({ user, onSaved }) => {
     const [interests, setInterests] = useState([]);
+    const [traits, setTraits] = useState([]);
     const [availableTimes, setAvailableTimes] = useState([]);
     const [date, setDate] = useState("");
     const [timeStart, setTimeStart] = useState("09:00");
     const [timeEnd, setTimeEnd] = useState("18:00");
     const [gender, setGender] = useState("");
     const [ageGroup, setAgeGroup] = useState("");
+    const [location, setLocation] = useState("");
 
     const toggleInterest = (item) => {
         setInterests((prev) =>
+            prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+        );
+    };
+
+    const toggleTrait = (item) => {
+        setTraits((prev) =>
             prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
         );
     };
@@ -43,49 +67,21 @@ const UserPreferenceForm = ({ user, onSaved }) => {
         setDate("");
     };
 
-    const getDistrictFromCoords = async (lat, lng) => {
-        try {
-            const response = await fetch(
-                `https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x=${lng}&y=${lat}`,
-                {
-                    headers: {
-                        Authorization: `KakaoAK ${process.env.REACT_APP_KAKAO_REST_API_KEY}`
-                    }
-                }
-            );
-            const data = await response.json();
-            const regionInfo = data.documents?.[0];
-            if (regionInfo?.region_1depth_name !== "서울특별시") {
-                return "서울시 외 지역";
-            }
-            return regionInfo?.region_2depth_name || "위치 정보 없음";
-        } catch (err) {
-            console.error("위치 정보 변환 실패", err);
-            return "위치 정보 없음";
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (!location) {
+            alert("⛔ 위치(자치구)를 선택해주세요.");
+            return;
+        }
         if (availableTimes.length === 0) {
             alert("⛔ 최소 1개의 참여 가능한 날짜 및 시간을 추가해주세요.");
             return;
         }
 
-        let location = "위치 정보 없음";
-        try {
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
-            });
-            const { latitude, longitude } = position.coords;
-            location = await getDistrictFromCoords(latitude, longitude);
-        } catch (error) {
-            alert("⚠️ 위치 권한이 허용되지 않았거나 실패했습니다.");
-        }
-
         const userData = {
             interests,
+            traits,
             availableTimes,
             gender,
             ageGroup,
@@ -93,13 +89,20 @@ const UserPreferenceForm = ({ user, onSaved }) => {
             updatedAt: new Date()
         };
 
-        await setDoc(doc(db, "users", user.email), {
-            ...user,
-            ...userData
-        });
+        try {
+            const { doc, setDoc } = await import("firebase/firestore");
+            const { db } = await import("./firebase");
+            await setDoc(doc(db, "users", user.email), {
+                ...user,
+                ...userData
+            });
 
-        alert("✅ 정보가 저장되었습니다!");
-        if (onSaved) onSaved();
+            alert("✅ 정보가 저장되었습니다!");
+            if (onSaved) onSaved();
+        } catch (err) {
+            console.error("❌ 저장 실패:", err);
+            alert("❌ 저장 중 오류가 발생했습니다.");
+        }
     };
 
     return (
@@ -135,7 +138,7 @@ const UserPreferenceForm = ({ user, onSaved }) => {
             </div>
 
             <h3>관심사 선택</h3>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "1rem" }}>
                 {interestsList.map((item) => (
                     <button
                         type="button"
@@ -154,7 +157,27 @@ const UserPreferenceForm = ({ user, onSaved }) => {
                 ))}
             </div>
 
-            <h3 style={{ marginTop: "1.5rem" }}>참여 가능한 날짜 및 시간</h3>
+            <h3>성향 선택</h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "1rem" }}>
+                {traitOptions.map((item) => (
+                    <button
+                        type="button"
+                        key={item}
+                        onClick={() => toggleTrait(item)}
+                        style={{
+                            backgroundColor: traits.includes(item) ? "#f6ad55" : "#eee",
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "none",
+                            cursor: "pointer",
+                        }}
+                    >
+                        {item}
+                    </button>
+                ))}
+            </div>
+
+            <h3>참여 가능한 날짜 및 시간</h3>
             <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "1rem" }}>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
                 <input type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} />
@@ -172,6 +195,18 @@ const UserPreferenceForm = ({ user, onSaved }) => {
                     ))}
                 </ul>
             )}
+
+            <h3>서울시 자치구 선택</h3>
+            <select
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                style={{ marginTop: "10px", padding: "8px", borderRadius: "6px" }}
+            >
+                <option value="">-- 선택하세요 --</option>
+                {seoulDistricts.map((gu) => (
+                    <option key={gu} value={gu}>{gu}</option>
+                ))}
+            </select>
 
             <button
                 type="submit"

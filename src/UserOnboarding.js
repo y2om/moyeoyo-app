@@ -1,6 +1,6 @@
 ﻿import React, { useState } from "react";
 import KakaoLoginButton from "./KakaoLoginButton";
-import UserPreferenceForm from "./UserPreferenceForm";
+import UserOnboarding from "./UserOnboarding";
 import AdminPage from "./AdminPage";
 import { setDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
@@ -8,19 +8,6 @@ import { db } from "./firebase";
 function App() {
     const [showAdminPage, setShowAdminPage] = useState(false);
     const user = JSON.parse(localStorage.getItem("user"));
-
-    const handlePreferenceSave = async (data) => {
-        try {
-            await setDoc(doc(db, "users", user.email), {
-                ...user,
-                ...data,
-                updatedAt: new Date(),
-            });
-            alert("✅ 관심사 및 시간이 저장되었습니다!");
-        } catch (error) {
-            console.error("❌ Firestore 저장 실패", error);
-        }
-    };
 
     const logoutFromKakao = () => {
         if (window.Kakao && window.Kakao.Auth && window.Kakao.Auth.getAccessToken()) {
@@ -108,10 +95,7 @@ function App() {
                         )}
                     </div>
 
-                    <h1>모여요 - 청년 교류 매칭 서비스</h1>
-                    <h2>{user.nickname}님 안녕하세요 👋</h2>
-                    <p>{user.email}</p>
-                    <UserPreferenceForm user={user} onSaved={handlePreferenceSave} />
+                    <UserOnboarding user={user} />
                 </div>
             )}
         </div>

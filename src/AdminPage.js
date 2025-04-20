@@ -1,161 +1,129 @@
 ﻿import React, { useEffect, useState } from "react";
-import { collection, getDocs, setDoc, doc } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "./firebase";
-import { v4 as uuidv4 } from "uuid";
 
 const AdminPage = () => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [matchingGroups, setMatchingGroups] = useState([]);
-    const [groupSize, setGroupSize] = useState(4);
-    const user = JSON.parse(localStorage.getItem("user"));
+    const [matchingResults, setMatchingResults] = useState([]);
+    const [userList, setUserList] = useState([]);
+    const [selectedMenu, setSelectedMenu] = useState("users"); // "users" or "matches"
 
     useEffect(() => {
-        if (!user || user.email !== "ybhss1418@naver.com") return;
-        const fetchUsers = async () => {
-            const snapshot = await getDocs(collection(db, "users"));
-            const userList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setUsers(userList);
-            setLoading(false);
+        const fetchMatchingResults = async () => {
+            try {
+                const snapshot = await getDocs(collection(db, "matchingResults"));
+                const results = snapshot.docs.map(doc => doc.data());
+                setMatchingResults(results);
+            } catch (error) {
+                console.error("❌ 매칭 결과 불러오기 실패:", error);
+            }
         };
+
+        const fetchUsers = async () => {
+            try {
+                const snapshot = await getDocs(collection(db, "users"));
+                const users = snapshot.docs.map(doc => doc.data());
+                setUserList(users);
+            } catch (error) {
+                console.error("❌ 사용자 목록 불러오기 실패:", error);
+            }
+        };
+
+        fetchMatchingResults();
         fetchUsers();
-    }, [user]);
-
-    const handleAutoMatch = () => {
-        const matches = [];
-        const used = new Set();
-
-        for (let i = 0; i < users.length; i++) {
-            const group = [users[i]];
-            if (used.has(users[i].email)) continue;
-
-            for (let j = i + 1; j < users.length; j++) {
-                if (used.has(users[j].email)) continue;
-
-                const sharedInterests = users[i].interests?.filter(item => users[j].interests?.includes(item));
-
-                const dateTimeOverlap = users[i].availableTimes?.some(t1 =>
-                    users[j].availableTimes?.some(t2 => t1.date === t2.date && t1.timeRange === t2.timeRange)
-                );
-
-                if (sharedInterests?.length > 0 && dateTimeOverlap) {
-                    group.push(users[j]);
-                }
-
-                if (group.length >= groupSize || group.length === 6) break;
-            }
-
-            if (group.length >= 4 && group.length <= 6) {
-                group.forEach(u => used.add(u.email));
-                const commonAvailableTime = group[0].availableTimes?.find(time =>
-                    group.every(member =>
-                        member.availableTimes?.some(t => t.date === time.date && t.timeRange === time.timeRange)
-                    )
-                );
-
-                matches.push({
-                    id: uuidv4(),
-                    members: group.map(u => u.email),
-                    commonInterests: group.reduce((acc, cur) => acc.filter(item => cur.interests?.includes(item)), group[0].interests || []),
-                    date: commonAvailableTime?.date || "",
-                    timeRange: commonAvailableTime?.timeRange || "",
-                });
-            }
-        }
-
-        setMatchingGroups(matches);
-
-        if (matches.length === 0) {
-            alert("😢 조건에 맞는 매칭 그룹이 없습니다.");
-        } else {
-            matches.forEach(async (match) => {
-                await setDoc(doc(db, "matchingGroups", match.id), match);
-            });
-            alert("✅ 날짜 포함 자동 매칭이 완료되었습니다!");
-        }
-    };
-
-    if (!user || user.email !== "ybhss1418@naver.com") {
-        return <p style={{ padding: "2rem" }}>🚫 관리자만 접근할 수 있습니다.</p>;
-    }
-
-    if (loading) return <p>⏳ 사용자 정보를 불러오는 중입니다...</p>;
+    }, []);
 
     return (
         <div style={{ padding: "2rem" }}>
-            <h2>📋 관리자 페이지 - 사용자 목록</h2>
+            <h2>📋 관리자 페이지</h2>
 
-            <div style={{ marginBottom: "10px" }}>
-                <label>👥 그룹 최대 인원 수: </label>
-                <input
-                    type="number"
-                    value={groupSize}
-                    onChange={(e) => setGroupSize(parseInt(e.target.value) || 4)}
-                    min="4"
-                    max="6"
-                    style={{ width: "60px", marginLeft: "10px" }}
-                />
+            <div style={{ marginBottom: "1.5rem" }}>
+                <button
+                    onClick={() => setSelectedMenu("users")}
+                    style={{
+                        marginRight: "10px",
+                        padding: "8px 16px",
+                        backgroundColor: selectedMenu === "users" ? "#3182ce" : "#e2e8f0",
+                        color: selectedMenu === "users" ? "white" : "black",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer"
+                    }}
+                >
+                    👥 사용자 목록
+                </button>
+                <button
+                    onClick={() => setSelectedMenu("matches")}
+                    style={{
+                        padding: "8px 16px",
+                        backgroundColor: selectedMenu === "matches" ? "#3182ce" : "#e2e8f0",
+                        color: selectedMenu === "matches" ? "white" : "black",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer"
+                    }}
+                >
+                    🔗 매칭 그룹
+                </button>
             </div>
 
-            <button
-                onClick={handleAutoMatch}
-                style={{
-                    marginBottom: "20px",
-                    backgroundColor: "#4CAF50",
-                    color: "white",
-                    padding: "10px 16px",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                }}
-            >
-                🔄 4~6인 자동 매칭 실행
-            </button>
-
-            {matchingGroups.length > 0 && (
-                <div style={{ marginBottom: "2rem" }}>
-                    <h3>🔗 매칭된 그룹 ({matchingGroups.length}개)</h3>
-                    {matchingGroups.map((group, idx) => (
-                        <div key={group.id} style={{ padding: "10px", border: "1px solid #ccc", marginTop: "10px" }}>
-                            <strong>그룹 {idx + 1}:</strong>
-                            <p>👥 {group.members.join(", ")}</p>
-                            <p>🎯 공통 관심사: {group.commonInterests.join(", ")}</p>
-                            <p>📅 날짜: {group.date} | ⏰ 시간: {group.timeRange}</p>
-                        </div>
-                    ))}
-                </div>
+            {selectedMenu === "users" && (
+                <>
+                    <h3>🧑‍🤝‍🧑 등록된 사용자 목록</h3>
+                    {userList.length === 0 ? (
+                        <p>⏳ 사용자 목록을 불러오는 중입니다...</p>
+                    ) : (
+                        userList.map((user, idx) => (
+                            <div
+                                key={user.email || idx}
+                                style={{
+                                    border: "1px solid #ccc",
+                                    borderRadius: "8px",
+                                    padding: "1rem",
+                                    marginBottom: "1rem",
+                                    backgroundColor: "#f0f8ff",
+                                }}
+                            >
+                                <p><strong>닉네임:</strong> {user.nickname || "(없음)"}</p>
+                                <p><strong>이메일:</strong> {user.email}</p>
+                                <p><strong>성별:</strong> {user.gender}</p>
+                                <p><strong>나이대:</strong> {user.ageGroup}</p>
+                                <p><strong>자치구:</strong> {user.location}</p>
+                            </div>
+                        ))
+                    )}
+                </>
             )}
 
-            {users.length === 0 ? (
-                <p>🙁 등록된 사용자가 없습니다.</p>
-            ) : (
-                users.map(user => (
-                    <div
-                        key={user.id}
-                        style={{
-                            border: "1px solid #ccc",
-                            borderRadius: "8px",
-                            padding: "1rem",
-                            marginBottom: "1rem",
-                            backgroundColor: "#f9f9f9"
-                        }}
-                    >
-                        <h3>👤 {user.nickname || "닉네임 없음"}</h3>
-                        <p><strong>이메일:</strong> {user.email}</p>
-                        <p><strong>성별:</strong> {user.gender || "미입력"}</p>
-                        <p><strong>나이대:</strong> {user.ageGroup || "미입력"}</p>
-                        <p><strong>관심사:</strong> {user.interests?.join(", ") || "없음"}</p>
-                        <p><strong>위치:</strong> {user.location || "위치 정보 없음"}</p>
-                        <p><strong>가능 시간:</strong></p>
-                        <ul>
-                            {(user.availableTimes || []).map((time, idx) => (
-                                <li key={idx}>
-                                    📅 {time.date} | ⏰ {time.timeRange}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ))
+            {selectedMenu === "matches" && (
+                <>
+                    <h3>🔗 매칭된 그룹 목록</h3>
+                    {matchingResults.length === 0 ? (
+                        <p>⏳ 아직 매칭된 그룹이 없습니다.</p>
+                    ) : (
+                        matchingResults.map((group, idx) => (
+                            <div
+                                key={group.groupId || idx}
+                                style={{
+                                    border: "1px solid #ccc",
+                                    borderRadius: "8px",
+                                    padding: "1rem",
+                                    marginBottom: "1rem",
+                                    backgroundColor: "#f9f9f9",
+                                }}
+                            >
+                                <h3>그룹 {idx + 1}</h3>
+                                <p><strong>공통 관심사:</strong> {group.commonInterests?.join(", ")}</p>
+                                <p><strong>구성원:</strong></p>
+                                <ul>
+                                    {group.members?.map((email, i) => (
+                                        <li key={i}>👤 {email}</li>
+                                    ))}
+                                </ul>
+                                <p><strong>매칭 시각:</strong> {group.matchedAt?.toDate?.().toLocaleString?.() || String(group.matchedAt)}</p>
+                            </div>
+                        ))
+                    )}
+                </>
             )}
         </div>
     );
