@@ -6,8 +6,8 @@ import { setDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
 
 function App() {
+    const [showAdminPage, setShowAdminPage] = useState(false);
     const user = JSON.parse(localStorage.getItem("user"));
-    const [view, setView] = useState("main"); // 'main' | 'admin'
 
     const handlePreferenceSave = async (data) => {
         try {
@@ -35,103 +35,84 @@ function App() {
         }
     };
 
-    if (!user) {
-        return (
-            <div
-                style={{
-                    backgroundImage: "url('/background.jpg')",
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    height: "100vh",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
+    return (
+        <div style={{ fontFamily: "Noto Sans KR, sans-serif", position: "relative", minHeight: "100vh" }}>
+            {!user ? (
                 <div
                     style={{
-                        backgroundColor: "rgba(0, 0, 0, 0.5)",
-                        padding: "40px",
-                        borderRadius: "12px",
-                        textAlign: "center",
+                        backgroundImage: "url('/background.jpg')",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        height: "100vh",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                     }}
                 >
-                    <h1
+                    <div
                         style={{
-                            fontSize: "2.5rem",
-                            color: "#fff",
-                            marginBottom: "20px",
-                            textShadow: "2px 2px 6px rgba(0,0,0,0.6)",
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            padding: "40px",
+                            borderRadius: "12px",
+                            textAlign: "center",
                         }}
                     >
-                        모여요
-                    </h1>
-                    <KakaoLoginButton />
+                        <h1
+                            style={{
+                                fontSize: "2.5rem",
+                                color: "#fff",
+                                marginBottom: "20px",
+                                textShadow: "2px 2px 6px rgba(0,0,0,0.6)",
+                            }}
+                        >
+                            모여요
+                        </h1>
+                        <KakaoLoginButton />
+                    </div>
                 </div>
-            </div>
-        );
-    }
-
-    return (
-        <div style={{ fontFamily: "Noto Sans KR, sans-serif", position: "relative", minHeight: "100vh", padding: "2rem" }}>
-            {/* 오른쪽 상단 버튼 */}
-            <div style={{ position: "absolute", top: "20px", right: "20px", display: "flex", gap: "10px" }}>
-                {user.email === "ybhss1418@naver.com" && (
-                    <>
-                        <button
-                            onClick={() => setView("main")}
-                            style={{
-                                backgroundColor: "#007bff",
-                                color: "#fff",
-                                border: "none",
-                                padding: "8px 12px",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                            }}
-                        >
-                            사용자 화면
-                        </button>
-                        <button
-                            onClick={() => setView("admin")}
-                            style={{
-                                backgroundColor: "#6c757d",
-                                color: "#fff",
-                                border: "none",
-                                padding: "8px 12px",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                            }}
-                        >
-                            관리자 페이지
-                        </button>
-                    </>
-                )}
-                <button
-                    onClick={logoutFromKakao}
-                    style={{
-                        backgroundColor: "#ddd",
-                        border: "none",
-                        padding: "8px 16px",
-                        borderRadius: "6px",
-                        fontSize: "14px",
-                        cursor: "pointer",
-                    }}
-                >
-                    로그아웃
-                </button>
-            </div>
-
-            {/* 본문 */}
-            {view === "admin" && user.email === "ybhss1418@naver.com" ? (
+            ) : showAdminPage ? (
                 <AdminPage />
             ) : (
-                <>
+                <div style={{ padding: "2rem" }}>
+                    <div style={{ position: "absolute", top: "20px", right: "20px" }}>
+                        <button
+                            onClick={logoutFromKakao}
+                            style={{
+                                backgroundColor: "#ddd",
+                                border: "none",
+                                padding: "8px 16px",
+                                borderRadius: "6px",
+                                fontSize: "14px",
+                                cursor: "pointer",
+                                marginLeft: "10px",
+                            }}
+                        >
+                            로그아웃
+                        </button>
+                        {user.email === "ybhss1418@naver.com" && (
+                            <button
+                                onClick={() => setShowAdminPage(true)}
+                                style={{
+                                    backgroundColor: "#007bff",
+                                    color: "white",
+                                    padding: "8px 16px",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    fontSize: "14px",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                관리자 페이지
+                            </button>
+                        )}
+                    </div>
+
                     <h1>모여요 - 청년 교류 매칭 서비스</h1>
                     <h2>{user.nickname}님 안녕하세요 👋</h2>
                     <p>{user.email}</p>
-                    <UserPreferenceForm onSave={handlePreferenceSave} />
-                </>
+                    <UserPreferenceForm user={user} onSaved={() => { }} />
+                </div>
             )}
         </div>
     );

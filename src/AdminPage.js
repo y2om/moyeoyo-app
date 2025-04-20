@@ -7,7 +7,7 @@ const AdminPage = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [matchingGroups, setMatchingGroups] = useState([]);
-    const [groupSize, setGroupSize] = useState(3);
+    const [groupSize, setGroupSize] = useState(4);
     const user = JSON.parse(localStorage.getItem("user"));
 
     useEffect(() => {
@@ -42,10 +42,10 @@ const AdminPage = () => {
                     group.push(users[j]);
                 }
 
-                if (group.length >= groupSize) break;
+                if (group.length >= groupSize || group.length === 6) break;
             }
 
-            if (group.length >= 2) {
+            if (group.length >= 4 && group.length <= 6) {
                 group.forEach(u => used.add(u.email));
                 const commonAvailableTime = group[0].availableTimes?.find(time =>
                     group.every(member =>
@@ -90,9 +90,9 @@ const AdminPage = () => {
                 <input
                     type="number"
                     value={groupSize}
-                    onChange={(e) => setGroupSize(parseInt(e.target.value) || 2)}
-                    min="2"
-                    max="10"
+                    onChange={(e) => setGroupSize(parseInt(e.target.value) || 4)}
+                    min="4"
+                    max="6"
                     style={{ width: "60px", marginLeft: "10px" }}
                 />
             </div>
@@ -109,7 +109,7 @@ const AdminPage = () => {
                     cursor: "pointer",
                 }}
             >
-                🔄 자동 매칭 실행
+                🔄 4~6인 자동 매칭 실행
             </button>
 
             {matchingGroups.length > 0 && (
@@ -145,6 +145,7 @@ const AdminPage = () => {
                         <p><strong>성별:</strong> {user.gender || "미입력"}</p>
                         <p><strong>나이대:</strong> {user.ageGroup || "미입력"}</p>
                         <p><strong>관심사:</strong> {user.interests?.join(", ") || "없음"}</p>
+                        <p><strong>위치:</strong> {user.location || "위치 정보 없음"}</p>
                         <p><strong>가능 시간:</strong></p>
                         <ul>
                             {(user.availableTimes || []).map((time, idx) => (

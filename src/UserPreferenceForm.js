@@ -1,4 +1,6 @@
 ﻿import { useState } from "react";
+import { db } from "./firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 const interestsList = [
     "🎬 영화", "💪 운동", "📚 독서", "🎮 게임", "🎧 음악",
@@ -8,7 +10,7 @@ const interestsList = [
     "🏕️ 캠핑", "☕ 카페 탐방"
 ];
 
-const UserPreferenceForm = ({ onSave }) => {
+const UserPreferenceForm = ({ user, onSaved }) => {
     const [interests, setInterests] = useState([]);
     const [availableTimes, setAvailableTimes] = useState([]);
     const [date, setDate] = useState("");
@@ -19,9 +21,7 @@ const UserPreferenceForm = ({ onSave }) => {
 
     const toggleInterest = (item) => {
         setInterests((prev) =>
-            prev.includes(item)
-                ? prev.filter((i) => i !== item)
-                : [...prev, item]
+            prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
         );
     };
 
@@ -32,7 +32,6 @@ const UserPreferenceForm = ({ onSave }) => {
         }
 
         const newEntry = { date, timeRange: `${timeStart} ~ ${timeEnd}` };
-
         const exists = availableTimes.some(
             (entry) => entry.date === newEntry.date && entry.timeRange === newEntry.timeRange
         );
@@ -44,7 +43,29 @@ const UserPreferenceForm = ({ onSave }) => {
         setDate("");
     };
 
-    const handleSubmit = (e) => {
+    const getDistrictFromCoords = async (lat, lng) => {
+        try {
+            const response = await fetch(
+                `https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x=${lng}&y=${lat}`,
+                {
+                    headers: {
+                        Authorization: `KakaoAK ${process.env.REACT_APP_KAKAO_REST_API_KEY}`
+                    }
+                }
+            );
+            const data = await response.json();
+            const regionInfo = data.documents?.[0];
+            if (regionInfo?.region_1depth_name !== "서울특별시") {
+                return "서울시 외 지역";
+            }
+            return regionInfo?.region_2depth_name || "위치 정보 없음";
+        } catch (err) {
+            console.error("위치 정보 변환 실패", err);
+            return "위치 정보 없음";
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (availableTimes.length === 0) {
@@ -52,12 +73,33 @@ const UserPreferenceForm = ({ onSave }) => {
             return;
         }
 
-        onSave({
+        let location = "위치 정보 없음";
+        try {
+            const position = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+            const { latitude, longitude } = position.coords;
+            location = await getDistrictFromCoords(latitude, longitude);
+        } catch (error) {
+            alert("⚠️ 위치 권한이 허용되지 않았거나 실패했습니다.");
+        }
+
+        const userData = {
             interests,
             availableTimes,
             gender,
             ageGroup,
+            location,
+            updatedAt: new Date()
+        };
+
+        await setDoc(doc(db, "users", user.email), {
+            ...user,
+            ...userData
         });
+
+        alert("✅ 정보가 저장되었습니다!");
+        if (onSaved) onSaved();
     };
 
     return (
@@ -72,8 +114,7 @@ const UserPreferenceForm = ({ onSave }) => {
                             value={option}
                             checked={gender === option}
                             onChange={(e) => setGender(e.target.value)}
-                        />{" "}
-                        {option}
+                        /> {option}
                     </label>
                 ))}
             </div>
@@ -88,8 +129,7 @@ const UserPreferenceForm = ({ onSave }) => {
                             value={option}
                             checked={ageGroup === option}
                             onChange={(e) => setAgeGroup(e.target.value)}
-                        />{" "}
-                        {option}
+                        /> {option}
                     </label>
                 ))}
             </div>
@@ -116,25 +156,11 @@ const UserPreferenceForm = ({ onSave }) => {
 
             <h3 style={{ marginTop: "1.5rem" }}>참여 가능한 날짜 및 시간</h3>
             <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "1rem" }}>
-                <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                />
-                <input
-                    type="time"
-                    value={timeStart}
-                    onChange={(e) => setTimeStart(e.target.value)}
-                />
+                <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <input type="time" value={timeStart} onChange={(e) => setTimeStart(e.target.value)} />
                 <span>~</span>
-                <input
-                    type="time"
-                    value={timeEnd}
-                    onChange={(e) => setTimeEnd(e.target.value)}
-                />
-                <button type="button" onClick={handleAddTime}>
-                    추가하기
-                </button>
+                <input type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} />
+                <button type="button" onClick={handleAddTime}>추가하기</button>
             </div>
 
             {availableTimes.length > 0 && (
