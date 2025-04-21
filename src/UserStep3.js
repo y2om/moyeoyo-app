@@ -1,78 +1,75 @@
 ﻿import React, { useState } from "react";
 
-const traitOptions = [
-    "🗣️ 활발한 대화를 좋아해요",
-    "🤫 조용한 분위기를 선호해요",
-    "👋 처음 보는 사람과 금방 친해져요",
-    "🧍 익숙해지기까지 시간이 좀 걸려요",
-    "🧭 주도적으로 활동하는 걸 좋아해요",
-    "🧑‍🤝‍🧑 따라가는 게 편해요",
-    "🌞 밝고 유쾌한 분위기",
+const traitList = [
+    "🗣 활발한 대화를 좋아해요",
+    "😌 조용한 분위기를 선호해요",
+    "🧍‍♀️ 처음 보는 사람과 금방 친해져요",
+    "🧍 익숙해지기까지 시간이 걸려요",
+    "🌟 주도적인 걸 좋아해요",
+    "🙌 따라가는 게 편해요",
+    "🎉 밝고 유쾌한 분위기",
     "🌙 차분하고 조용한 분위기"
 ];
 
-const UserStep3 = ({ onSubmit, setFormData }) => {
+const UserStep3 = ({ onNext, setFormData }) => {
     const [selectedTraits, setSelectedTraits] = useState([]);
 
-    const toggleTrait = (item) => {
+    const toggleTrait = (trait) => {
         setSelectedTraits((prev) =>
-            prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+            prev.includes(trait)
+                ? prev.filter((t) => t !== trait)
+                : [...prev, trait]
         );
     };
 
-    const handleSubmit = () => {
-        if (selectedTraits.length === 0) {
-            alert("성향을 하나 이상 선택해주세요.");
-            return;
-        }
-        setFormData(prev => ({ ...prev, traits: selectedTraits }));
-        onSubmit();
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setFormData((prev) => ({ ...prev, traits: selectedTraits }));
+        if (onNext) onNext(); // ✅ 에러 원인이던 onSubmit → onNext로 수정
     };
 
     return (
-        <div style={{ padding: "2rem", textAlign: "center" }}>
-            <h2 style={{ marginBottom: "1rem" }}>🧭 당신의 성향은 어떤가요?</h2>
-            <p style={{ marginBottom: "2rem" }}>함께하는 사람들과 잘 어울릴 수 있도록 당신의 성향을 알려주세요.</p>
+        <form onSubmit={handleSubmit} style={{ textAlign: "center", padding: "2rem" }}>
+            <h2>당신의 성향을 알려주세요</h2>
+            <p style={{ color: "#666", marginBottom: "1.5rem" }}>
+                더 잘 어울릴 수 있는 사람을 찾아드릴게요 💫
+            </p>
 
-            <div style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                gap: "10px",
-                marginBottom: "2rem"
-            }}>
-                {traitOptions.map((item) => (
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px" }}>
+                {traitList.map((trait) => (
                     <button
+                        key={trait}
                         type="button"
-                        key={item}
-                        onClick={() => toggleTrait(item)}
+                        onClick={() => toggleTrait(trait)}
                         style={{
-                            backgroundColor: selectedTraits.includes(item) ? "#f6ad55" : "#eee",
                             padding: "10px 14px",
                             borderRadius: "8px",
                             border: "none",
-                            cursor: "pointer",
+                            backgroundColor: selectedTraits.includes(trait) ? "#90cdf4" : "#e2e8f0",
+                            cursor: "pointer"
                         }}
                     >
-                        {item}
+                        {trait}
                     </button>
                 ))}
             </div>
 
             <button
-                onClick={handleSubmit}
+                type="submit"
                 style={{
-                    backgroundColor: "#4CAF50",
+                    marginTop: "2rem",
+                    backgroundColor: "#2b6cb0",
                     color: "white",
                     padding: "10px 20px",
-                    border: "none",
+                    fontSize: "16px",
                     borderRadius: "8px",
-                    cursor: "pointer",
+                    border: "none",
+                    cursor: "pointer"
                 }}
             >
-                저장하기
+                다음으로
             </button>
-        </div>
+        </form>
     );
 };
 

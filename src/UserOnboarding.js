@@ -1,105 +1,49 @@
 ﻿import React, { useState } from "react";
-import KakaoLoginButton from "./KakaoLoginButton";
-import UserOnboarding from "./UserOnboarding";
-import AdminPage from "./AdminPage";
-import { setDoc, doc } from "firebase/firestore";
 import { db } from "./firebase";
+import { doc, setDoc } from "firebase/firestore";
+import UserStep1 from "./UserStep1";
+import UserStep2 from "./UserStep2";
+import UserStep3 from "./UserStep3";
+import UserStep4 from "./UserStep4";
+import UserStep5 from "./UserStep5";
 
-function App() {
-    const [showAdminPage, setShowAdminPage] = useState(false);
-    const user = JSON.parse(localStorage.getItem("user"));
+const UserOnboarding = ({ user, onComplete }) => {
+    const [step, setStep] = useState(1);
+    const [formData, setFormData] = useState({
+        gender: "",
+        ageGroup: "",
+        interests: [],
+        traits: [],
+        availableTimes: [],
+        location: ""
+    });
 
-    const logoutFromKakao = () => {
-        if (window.Kakao && window.Kakao.Auth && window.Kakao.Auth.getAccessToken()) {
-            window.Kakao.Auth.logout(() => {
-                console.log("🧼 로그아웃 완료");
-                localStorage.removeItem("user");
-                window.location.reload();
+    const handleNext = () => setStep((prev) => prev + 1);
+
+    const handleSave = async () => {
+        try {
+            await setDoc(doc(db, "users", user.email), {
+                ...user,
+                ...formData,
+                updatedAt: new Date()
             });
-        } else {
-            localStorage.removeItem("user");
-            window.location.reload();
+            alert("✅ 정보가 저장되었습니다!");
+            onComplete(formData); // 🎯 App으로 사용자 정보 전달
+        } catch (error) {
+            console.error("❌ 저장 실패:", error);
+            alert("정보 저장에 실패했습니다.");
         }
     };
 
     return (
-        <div style={{ fontFamily: "Noto Sans KR, sans-serif", position: "relative", minHeight: "100vh" }}>
-            {!user ? (
-                <div
-                    style={{
-                        backgroundImage: "url('/background.jpg')",
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        height: "100vh",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: "rgba(0, 0, 0, 0.5)",
-                            padding: "40px",
-                            borderRadius: "12px",
-                            textAlign: "center",
-                        }}
-                    >
-                        <h1
-                            style={{
-                                fontSize: "2.5rem",
-                                color: "#fff",
-                                marginBottom: "20px",
-                                textShadow: "2px 2px 6px rgba(0,0,0,0.6)",
-                            }}
-                        >
-                            모여요
-                        </h1>
-                        <KakaoLoginButton />
-                    </div>
-                </div>
-            ) : showAdminPage ? (
-                <AdminPage />
-            ) : (
-                <div style={{ padding: "2rem" }}>
-                    <div style={{ position: "absolute", top: "20px", right: "20px" }}>
-                        <button
-                            onClick={logoutFromKakao}
-                            style={{
-                                backgroundColor: "#ddd",
-                                border: "none",
-                                padding: "8px 16px",
-                                borderRadius: "6px",
-                                fontSize: "14px",
-                                cursor: "pointer",
-                                marginLeft: "10px",
-                            }}
-                        >
-                            로그아웃
-                        </button>
-                        {user.email === "ybhss1418@naver.com" && (
-                            <button
-                                onClick={() => setShowAdminPage(true)}
-                                style={{
-                                    backgroundColor: "#007bff",
-                                    color: "white",
-                                    padding: "8px 16px",
-                                    border: "none",
-                                    borderRadius: "6px",
-                                    fontSize: "14px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                관리자 페이지
-                            </button>
-                        )}
-                    </div>
-
-                    <UserOnboarding user={user} />
-                </div>
-            )}
+        <div style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto" }}>
+            {step === 1 && <UserStep1 onNext={handleNext} setFormData={setFormData} />}
+            {step === 2 && <UserStep2 onNext={handleNext} setFormData={setFormData} />}
+            {step === 3 && <UserStep3 onNext={handleNext} setFormData={setFormData} />}
+            {step === 4 && <UserStep4 onNext={handleNext} setFormData={setFormData} />}
+            {step === 5 && <UserStep5 onNext={handleSave} setFormData={setFormData} />}
         </div>
     );
-}
+};
 
-export default App;
+export default UserOnboarding;

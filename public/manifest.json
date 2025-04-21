@@ -3,7 +3,12 @@
     "name": "모여요 - 청년 교류 매칭 서비스",
     "icons": [
         {
-            "src": "/icon512.png", // ← 이 경로로 아이콘 이미지 파일을 public 폴더에 넣어줘야 함
+            "src": "logo192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "logo512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
