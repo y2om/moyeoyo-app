@@ -35,6 +35,7 @@ function StepTimeSelectRange({ onNext, setFormData }) {
             return;
         }
 
+        console.log("🕒 저장 전 availableTimes:", availableTimes); // ✅ 디버깅용
         setFormData((prev) => ({ ...prev, availableTimes }));
         if (onNext) onNext();
     };
@@ -165,7 +166,7 @@ const listItemStyle = {
 const nextButtonStyle = {
     marginTop: "1.5rem",
     padding: "14px 32px",
-    backgroundColor: "#2b6cb0", // 파란색
+    backgroundColor: "#2b6cb0",
     color: "#fff",
     fontSize: "1.1rem",
     fontWeight: "500",

@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useState, useEffect } from "react";
 import StepGenderAge from "./steps/StepGenderAge";
 import StepInterestSelect from "./steps/StepInterestSelect";
 import StepPersonality from "./steps/StepPersonality";
@@ -18,6 +18,15 @@ function OnboardingController({ user, onComplete }) {
         location: ""
     });
 
+    const [shouldSubmit, setShouldSubmit] = useState(false); // 🔑 이게 핵심
+
+    // 🔥 상태가 완전히 반영된 후에만 제출
+    useEffect(() => {
+        if (shouldSubmit) {
+            handleFinalSubmit();
+        }
+    }, [shouldSubmit, formData]);
+
     const handleChange = (updatedData) => {
         setFormData((prev) => ({
             ...prev,
@@ -29,11 +38,12 @@ function OnboardingController({ user, onComplete }) {
         if (step < 5) {
             setStep(step + 1);
         } else {
-            handleFinalSubmit(); // 마지막 단계에서 저장 실행
+            setShouldSubmit(true); // 📌 상태 업데이트 후 제출
         }
     };
 
     const handleFinalSubmit = async () => {
+        console.log("🔥 저장 직전 formData:", formData); // 확인용 로그
         try {
             await setDoc(doc(db, "users", user.email), {
                 ...formData,
@@ -51,23 +61,41 @@ function OnboardingController({ user, onComplete }) {
         switch (step) {
             case 1:
                 return (
-                    <StepGenderAge formData={formData} onChange={handleChange} onNext={handleNext} />
+                    <StepGenderAge
+                        formData={formData}
+                        onChange={handleChange}
+                        onNext={handleNext}
+                    />
                 );
             case 2:
                 return (
-                    <StepInterestSelect formData={formData} onChange={handleChange} onNext={handleNext} />
+                    <StepInterestSelect
+                        formData={formData}
+                        onChange={handleChange}
+                        onNext={handleNext}
+                    />
                 );
             case 3:
                 return (
-                    <StepPersonality formData={formData} onChange={handleChange} onNext={handleNext} />
+                    <StepPersonality
+                        formData={formData}
+                        onChange={handleChange}
+                        onNext={handleNext}
+                    />
                 );
             case 4:
                 return (
-                    <StepTimeSelectRange setFormData={handleChange} onNext={handleNext} />
+                    <StepTimeSelectRange
+                        setFormData={handleChange}
+                        onNext={handleNext}
+                    />
                 );
             case 5:
                 return (
-                    <StepLocationSelect setFormData={handleChange} onNext={handleNext} />
+                    <StepLocationSelect
+                        setFormData={handleChange}
+                        onNext={handleNext}
+                    />
                 );
             default:
                 return null;

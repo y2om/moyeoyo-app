@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const guList = [
@@ -10,6 +10,14 @@ const guList = [
 
 function StepLocationSelect({ onNext, setFormData }) {
     const [selectedGu, setSelectedGu] = useState("");
+    const [isSubmitted, setIsSubmitted] = useState(false);
+
+    // ✅ location이 설정되고 나면 다음 단계로 이동
+    useEffect(() => {
+        if (isSubmitted && selectedGu) {
+            if (onNext) onNext();
+        }
+    }, [isSubmitted, selectedGu, onNext]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -19,9 +27,15 @@ function StepLocationSelect({ onNext, setFormData }) {
             return;
         }
 
-        setFormData((prev) => ({ ...prev, location: selectedGu }));
+        console.log("✅ 선택된 지역:", selectedGu);
 
-        if (onNext) onNext();
+        setFormData((prev) => {
+            const updated = { ...prev, location: selectedGu };
+            console.log("🧾 업데이트할 formData.location:", updated.location);
+            return updated;
+        });
+
+        setIsSubmitted(true); // 👉 location 업데이트 완료되었음을 표시
     };
 
     return (
@@ -60,7 +74,6 @@ function StepLocationSelect({ onNext, setFormData }) {
     );
 }
 
-// 스타일 정의
 const formStyle = {
     maxWidth: "500px",
     margin: "2rem auto",
