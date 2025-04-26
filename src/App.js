@@ -1,10 +1,11 @@
 ﻿import React, { useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import KakaoLoginButton from "./components/auth/KakaoLoginButton";
 import UserOnboarding from "./components/onboarding/UserOnboarding";
-import EventRecommendation from "./components/event/EventRecommendation";
+import MatchPage from "./pages/MatchPage"; // 매칭 페이지
 
 function App() {
-    const [filteredInfo, setFilteredInfo] = useState(null);
+    const [onboardingComplete, setOnboardingComplete] = useState(false);
     const user = JSON.parse(localStorage.getItem("user"));
 
     const logoutFromKakao = () => {
@@ -52,21 +53,33 @@ function App() {
     }
 
     return (
-        <div style={{ fontFamily: "Noto Sans KR, sans-serif", padding: "2rem", minHeight: "100vh" }}>
-            <div style={{ position: "absolute", top: "20px", right: "20px" }}>
-                <button onClick={logoutFromKakao}>로그아웃</button>
-            </div>
+        <Router>
+            <div style={{ fontFamily: "Noto Sans KR, sans-serif", padding: "2rem", minHeight: "100vh" }}>
+                <div style={{ position: "absolute", top: "20px", right: "20px" }}>
+                    <button onClick={logoutFromKakao}>로그아웃</button>
+                </div>
 
-            {filteredInfo ? (
-                <EventRecommendation
-                    interests={filteredInfo.interests}
-                    selectedDate={filteredInfo.availableTimes?.[0]?.date}
-                    selectedGu={filteredInfo.location}
-                />
-            ) : (
-                <UserOnboarding user={user} onComplete={setFilteredInfo} />
-            )}
-        </div>
+                <Routes>
+                    {/* 메인 경로: 온보딩 여부에 따라 이동 */}
+                    <Route
+                        path="/"
+                        element={
+                            onboardingComplete ? (
+                                <Navigate to="/match" replace />
+                            ) : (
+                                <UserOnboarding user={user} onComplete={() => setOnboardingComplete(true)} />
+                            )
+                        }
+                    />
+
+                    {/* 매칭 결과 페이지 */}
+                    <Route path="/match" element={<MatchPage />} />
+
+                    {/* 잘못된 경로 접근 시 홈으로 */}
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+            </div>
+        </Router>
     );
 }
 
