@@ -1,7 +1,7 @@
 ﻿// ngrok 서버에서 그룹 리스트 가져오기
 import axios from "axios";
 
-const BASE_URL = "https://833a-124-146-63-63.ngrok-free.app/api";
+const BASE_URL = "https://5901-1-231-153-62.ngrok-free.app/api";
 
 export async function fetchGroups(status = "") {
     try {
