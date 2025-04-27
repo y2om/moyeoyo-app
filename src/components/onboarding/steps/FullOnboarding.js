@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+﻿import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // 관심사 목록
@@ -28,68 +28,95 @@ function FullOnboarding({ formData, setFormData, onNext }) {
     const [currentStep, setCurrentStep] = useState("gender");
     const [localSelectedInterests, setLocalSelectedInterests] = useState(formData.interests || []);
     const [date, setDate] = useState("");
-    const [startTime, setStartTime] = useState("09:00");
-    const [endTime, setEndTime] = useState("18:00");
+    const [startTime] = useState("09:00");
+    const [endTime] = useState("18:00");
+    const [addressInput, setAddressInput] = useState("");
+    const locationInputRef = useRef();
 
-    // 공통 넘어가기
     const goNextStep = () => {
         if (currentStep === "gender") setCurrentStep("age");
         else if (currentStep === "age") setCurrentStep("interest");
         else if (currentStep === "interest") setCurrentStep("personality");
         else if (currentStep === "personality") setCurrentStep("time");
         else if (currentStep === "time") setCurrentStep("location");
-        else if (currentStep === "location") onNext();
+        else if (currentStep === "location") handleLocationSubmit();
     };
 
-    // 성별 선택
     const handleGenderSelect = (gender) => {
         setFormData({ ...formData, gender });
         setTimeout(goNextStep, 300);
     };
 
-    // 연령대 선택
     const handleAgeSelect = (ageGroup) => {
         setFormData({ ...formData, ageGroup });
         setTimeout(goNextStep, 300);
     };
 
-    // 관심사 선택
     const toggleInterest = (interest) => {
         const isSelected = localSelectedInterests.includes(interest);
         const updated = isSelected
             ? localSelectedInterests.filter((i) => i !== interest)
             : [...localSelectedInterests, interest];
-
         setLocalSelectedInterests(updated);
         setFormData({ ...formData, interests: updated });
     };
 
-    // 성격 선택
     const handlePersonalitySelect = (personality) => {
         setFormData({ ...formData, personality });
         setTimeout(goNextStep, 300);
     };
 
-    // 날짜/시간 추가
     const handleAddTime = () => {
         if (!date || !startTime || !endTime) {
-            alert("날짜와 시작/종료 시간을 모두 입력해주세요.");
+            alert("날짜와 시간을 입력해주세요.");
             return;
         }
         const newEntry = { date, timeRange: `${startTime} ~ ${endTime}` };
         const updatedTimes = [...(formData.availableTimes || []), newEntry];
         setFormData({ ...formData, availableTimes: updatedTimes });
         setDate("");
-        setStartTime("09:00");
-        setEndTime("18:00");
     };
 
-    // 위치 선택
-    const handleLocationSelect = (e) => {
-        setFormData({ ...formData, location: e.target.value });
+    const handleLocationSubmit = async () => {
+        const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_API_KEY;
+        const locationText = addressInput.trim(); // 🔥 input 상태값 직접 사용
+
+        if (!locationText) {
+            alert("주소를 입력해주세요!");
+            return;
+        }
+
+        try {
+            const res = await fetch(`https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(locationText)}`, {
+                headers: {
+                    Authorization: `KakaoAK ${REST_API_KEY}`,
+                },
+            });
+            const data = await res.json();
+
+            if (!data || !data.documents || data.documents.length === 0) {
+                alert("주소를 찾을 수 없습니다. 다시 입력해주세요.");
+                return;
+            }
+
+            const firstResult = data.documents[0];
+            const latitude = firstResult.y;
+            const longitude = firstResult.x;
+
+            setFormData({
+                ...formData,
+                location: locationText,
+                latitude,
+                longitude,
+            });
+
+            onNext(); // 완료 후 다음 단계로!
+        } catch (error) {
+            console.error("주소 검색 오류:", error);
+            alert("주소 검색 중 오류가 발생했습니다.");
+        }
     };
 
-    // 뒤로가기
     const handleBack = () => {
         if (currentStep === "location") setCurrentStep("time");
         else if (currentStep === "time") setCurrentStep("personality");
@@ -98,18 +125,10 @@ function FullOnboarding({ formData, setFormData, onNext }) {
         else if (currentStep === "age") setCurrentStep("gender");
     };
 
-    // 다음버튼 클릭
-    const handleNext = () => {
-        if (currentStep === "interest") setCurrentStep("personality");
-        else if (currentStep === "time") setCurrentStep("location");
-        else if (currentStep === "location") onNext();
-    };
-
-    // 다음버튼 활성화 조건
     const isNextEnabled = () => {
         if (currentStep === "interest") return localSelectedInterests.length > 0;
         if (currentStep === "time") return (formData.availableTimes || []).length > 0;
-        if (currentStep === "location") return formData.location;
+        if (currentStep === "location") return addressInput.trim().length > 0;
         return true;
     };
 
@@ -188,12 +207,7 @@ function FullOnboarding({ formData, setFormData, onNext }) {
                         <h2 style={headingStyle}>✨ 함께할 수 있는 시간을 입력해주세요</h2>
                         <div style={{ ...gridStyle, flexDirection: "column", alignItems: "center" }}>
                             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inputStyle} />
-                            <div style={{ display: "flex", gap: "10px" }}>
-                                <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} style={inputStyle} />
-                                <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} style={inputStyle} />
-                            </div>
                             <button onClick={handleAddTime} style={addButtonStyle}>➕ 추가</button>
-
                             {(formData.availableTimes || []).map((time, idx) => (
                                 <div key={idx} style={listItemStyle}>📅 {time.date} | ⏰ {time.timeRange}</div>
                             ))}
@@ -204,24 +218,21 @@ function FullOnboarding({ formData, setFormData, onNext }) {
                 {currentStep === "location" && (
                     <motion.div key="location" {...motionSettings} style={stepStyle}>
                         <h2 style={headingStyle}>✨ 어디에서 마주치고 싶나요?</h2>
-                        <img src="/seoul-map.png" alt="서울 지도" style={{ width: "100%", borderRadius: "12px" }} />
-                        <select value={formData.location} onChange={handleLocationSelect} style={selectStyle}>
-                            <option value="">-- 자치구를 골라주세요 --</option>
-                            {["강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구",
-                                "노원구", "도봉구", "동대문구", "동작구", "마포구", "서대문구", "서초구",
-                                "성동구", "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구", "종로구",
-                                "중구", "중랑구"].map((district) => (
-                                    <option key={district} value={district}>{district}</option>
-                                ))}
-                        </select>
+                        <input
+                            type="text"
+                            ref={locationInputRef}
+                            value={addressInput}
+                            onChange={(e) => setAddressInput(e.target.value)}
+                            placeholder="도로명 주소를 입력해주세요"
+                            style={inputStyle}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* 다음 버튼 (interest / time / location 단계에서만 표시) */}
             {["interest", "time", "location"].includes(currentStep) && (
                 <button
-                    onClick={handleNext}
+                    onClick={goNextStep}
                     disabled={!isNextEnabled()}
                     style={{
                         ...nextButtonStyle,
@@ -249,8 +260,7 @@ const buttonStyle = (isActive, color) => ({ flex: 1, backgroundColor: isActive ?
 const nextButtonStyle = { padding: "14px 32px", borderRadius: "16px", border: "none", fontSize: "1.1rem", fontWeight: "500", transition: "all 0.3s ease" };
 const gridStyle = { display: "flex", flexWrap: "wrap", gap: "12px", justifyContent: "center" };
 const tagButtonStyle = { padding: "10px 16px", borderRadius: "24px", border: "1px solid #ccc", fontSize: "1rem", cursor: "pointer" };
-const selectStyle = { width: "80%", padding: "12px", fontSize: "1.1rem", borderRadius: "10px", border: "1px solid #ccc" };
-const inputStyle = { padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontSize: "1rem" };
+const inputStyle = { width: "80%", padding: "12px", fontSize: "1.1rem", borderRadius: "10px", border: "1px solid #ccc", marginTop: "1rem" };
 const addButtonStyle = { marginTop: "10px", padding: "10px 16px", backgroundColor: "#edf2f7", border: "none", borderRadius: "10px", fontSize: "1rem", cursor: "pointer" };
 const listItemStyle = { backgroundColor: "#f7fafc", padding: "10px 16px", borderRadius: "10px", width: "100%", marginTop: "5px" };
 const motionSettings = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -20 }, transition: { duration: 0.5 } };
