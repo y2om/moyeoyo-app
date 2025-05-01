@@ -1,70 +1,83 @@
-# Getting Started with Create React App
+# 마주침(MeetEase)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+서울시 청년 1인 가구를 위한 공공 공간 기반 교류 플랫폼입니다. 관심사, 가능 시간, 위치 정보를 입력하면 자동 매칭되어 그룹 활동을 유도합니다.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 💡 프로젝트 개요
 
-### `npm start`
+**마주침(MeetEase)**은 서울시 1인 가구 청년들이 공통 관심사 및 참여 가능 시간에 맞춰 자연스럽게 교류할 수 있도록 돕는 서비스입니다. 사용자가 관심사와 가능 시간을 입력하면, 자동으로 유사한 조건의 사용자들과 매칭되어 소규모 그룹이 형성되고, 문화행사 정보를 추천받을 수 있습니다.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## ⚙️ 주요 기능
 
-### `npm test`
+### ✅ 사용자 정보 입력
+- 관심사, 나이대, 가능한 날짜 및 시간, 위치 정보 입력
+- Firebase Firestore에 사용자 정보 저장
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🔄 자동 그룹 매칭
+- Flask 백엔드 서버에서 `/api/group/match` 엔드포인트로 매칭 요청
+- Firestore에서 사용자 데이터 가져옴
+- 공통 관심사, 공통 날짜, 최대 4km 이내 거리 조건이 모두 만족되는 사용자들을 매칭
+- 매칭 결과를 Firestore의 `groups` 컬렉션에 저장
 
-### `npm run build`
+### 🔍 그룹 조회
+- `/api/groups` 엔드포인트를 통해 매칭된 그룹 정보 조회
+- 프론트엔드에서 Axios로 불러와 매칭 결과 화면에 표시
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🛠️ 기술 스택
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+| 영역       | 사용 기술                            |
+|------------|--------------------------------------|
+| 프론트엔드 | React (Vite), Axios, Vercel 배포     |
+| 백엔드     | Flask, Firebase Admin SDK, Ngrok     |
+| 데이터베이스 | Firebase Firestore                   |
+| 기타       | Flask-CORS, REST API 구조, Haversine 거리 계산 |
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🚀 실행 및 배포
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 1. 백엔드 (Flask 서버) 실행
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+python MeetEase.py
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+> `firebase_key.json` 위치를 정확하게 설정하세요.  
+> Ngrok으로 외부 접근을 위해 포트를 노출합니다:
 
-## Learn More
+```bash
+ngrok http 5000
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Ngrok 주소를 확인하여 `BASE_URL`로 사용합니다 (예: `https://xxxx.ngrok-free.app`)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 2. 프론트엔드 실행
 
-### Code Splitting
+```bash
+npm run dev
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+> 개발용: `http://localhost:3000`  
+> 배포용: Vercel (`https://moyeoyo-app.vercel.app`)
 
-### Analyzing the Bundle Size
+**주의**
+- Vercel에서 백엔드 API 호출 시 `CORS` 문제를 방지하기 위해 Flask에 `CORS(app)`를 반드시 설정해야 합니다.
+- Firestore 및 Ngrok 주소는 항상 최신 상태로 반영되어야 정상 작동합니다.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## 📁 API 엔드포인트 요약
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+| 메서드 | 경로                  | 설명                         |
+|--------|-----------------------|------------------------------|
+| POST   | `/api/group/match`    | 사용자 기반 자동 그룹 매칭 수행 |
+| GET    | `/api/groups`         | Firestore에 저장된 그룹 정보 조회 |
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+🕒 마지막 수정: 2025-05-01

@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // 필요 시 .env로 분리 가능
-const BASE_URL = "https://85bb-1-231-153-62.ngrok-free.app"; // 예: https://abcd-12-34-56-78.ngrok-free.app
+const BASE_URL = "https://92ab-1-231-153-62.ngrok-free.app"; // 예: https://abcd-12-34-56-78.ngrok-free.app
 
 function MatchPage() {
     const [groups, setGroups] = useState([]);
