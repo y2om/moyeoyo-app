@@ -1,105 +1,72 @@
-import React, { useEffect } from "react";
-import { db } from "../../firebase";
+// src/pages/KakaoLoginPage.js
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 
-const KakaoLoginButton = () => {
-    // ✅ Kakao SDK 초기화
-    useEffect(() => {
+const KakaoLoginPage = ({ onLogin }) => {
+    const navigate = useNavigate();
+
+    React.useEffect(() => {
         if (!window.Kakao.isInitialized()) {
-            window.Kakao.init("3272fe5644d61fd7ded031b2ff721155"); // 본인 JavaScript 키
+            window.Kakao.init("3272fe5644d61fd7ded031b2ff721155");
             console.log("✅ Kakao SDK Initialized");
         }
     }, []);
 
-    // ✅ 카카오 로그인 처리
-    const loginWithKakao = async () => {
+    const loginWithKakao = () => {
         window.Kakao.Auth.login({
             scope: "profile_nickname, account_email",
-            success: async function () {
+            success: async () => {
                 try {
                     const res = await window.Kakao.API.request({ url: "/v2/user/me" });
                     const nickname = res.kakao_account.profile.nickname;
                     const email = res.kakao_account.email;
 
-                    // Firestore에 사용자 정보 저장
+                    // Firestore에 사용자 문서 생성
                     await setDoc(doc(db, "users", email), {
                         nickname,
                         email,
-                        timestamp: new Date(),
+                        createdAt: new Date(),
                     });
 
-                    // 로컬스토리지에 사용자 정보 저장
-                    localStorage.setItem("user", JSON.stringify({ nickname, email }));
+                    // 로컬스토리지에 onboarded=false 포함해서 저장
+                    const user = { nickname, email, onboarded: false };
+                    localStorage.setItem("user", JSON.stringify(user));
+                    onLogin(user);
 
-                    alert(`환영합니다, ${nickname}님!`);
-                    window.location.reload(); // 새로고침으로 반영
-                } catch (error) {
-                    console.error("❌ 사용자 정보 요청 실패:", error);
-                    alert("사용자 정보를 불러오는 데 실패했습니다.");
+                    alert(`환영합니다, ${nickname}님! 프로필을 입력해주세요.`);
+                    navigate("/onboarding");
+                } catch (err) {
+                    console.error("❌ 사용자 정보 요청 실패:", err);
+                    alert("로그인 정보 처리에 실패했습니다.");
                 }
             },
-            fail: function (err) {
-                console.error("❌ 로그인 실패:", err);
-                alert("로그인에 실패했습니다. 다시 시도해주세요.");
+            fail: (err) => {
+                console.error("❌ 카카오 로그인 실패:", err);
+                alert("로그인에 실패했습니다.");
             },
         });
     };
 
-    // ✅ 카카오 로그아웃
-    const logoutFromKakao = () => {
-        if (window.Kakao.Auth.getAccessToken()) {
-            window.Kakao.Auth.logout(() => {
-                localStorage.removeItem("user");
-                alert("로그아웃 되었습니다.");
-                window.location.reload();
-            });
-        } else {
-            console.log("🔁 이미 로그아웃 상태입니다.");
-        }
-    };
-
-    const user = JSON.parse(localStorage.getItem("user"));
-
     return (
-        <div style={{ textAlign: "center" }}>
-            {user ? (
-                <>
-                    <h2>{user.nickname}님 안녕하세요 👋</h2>
-                    <p>{user.email}</p>
-                    <button
-                        onClick={logoutFromKakao}
-                        style={{
-                            marginTop: "1rem",
-                            backgroundColor: "#ccc",
-                            border: "none",
-                            borderRadius: "8px",
-                            padding: "10px 20px",
-                            cursor: "pointer",
-                            fontSize: "16px",
-                        }}
-                    >
-                        로그아웃
-                    </button>
-                </>
-            ) : (
-                <button
-                    onClick={loginWithKakao}
-                    style={{
-                        backgroundColor: "#FEE500",
-                        border: "none",
-                        borderRadius: "8px",
-                        padding: "10px 20px",
-                        fontWeight: "bold",
-                        cursor: "pointer",
-                        color: "#000",
-                        fontSize: "16px",
-                    }}
-                >
-                    카카오톡으로 로그인
-                </button>
-            )}
+        <div style={{ textAlign: "center", marginTop: 100 }}>
+            <button
+                onClick={loginWithKakao}
+                style={{
+                    backgroundColor: "#FEE500",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "12px 24px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    fontSize: 16,
+                }}
+            >
+                카카오톡으로 로그인
+            </button>
         </div>
     );
 };
 
-export default KakaoLoginButton;
+export default KakaoLoginPage;

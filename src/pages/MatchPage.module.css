@@ -1,0 +1,132 @@
+﻿.page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: "Apple SD Gothic Neo", sans-serif;
+    background-color: #f6f7f8;
+    min-height: 100vh;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.title {
+    font-size: 24px;
+    color: #333;
+    font-weight: 700;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+
+.subtitle {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.cardContainer {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.groupCard {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 16px;
+    position: relative;
+}
+
+.groupField {
+    display: flex;
+    margin-bottom: 8px;
+}
+
+.fieldLabel {
+    flex-shrink: 0;
+    color: #888;
+    width: 70px;
+    font-size: 14px;
+}
+
+.fieldValue {
+    color: #333;
+    font-size: 14px;
+}
+
+.groupStatus {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: #e3f3ff;
+    color: #007aff;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    text-transform: capitalize;
+}
+
+.emptyState {
+    text-align: center;
+    color: #aaa;
+    padding: 24px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.matchCard {
+    display: flex;
+    gap: 8px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 16px;
+    align-items: center;
+}
+
+.input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.button {
+    background-color: #007aff;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+    .button:hover {
+        background-color: #005ecb;
+    }
+
+.resultContainer {
+    margin-top: 24px;
+    display: grid;
+    gap: 16px;
+}
+
+.resultList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.resultItem {
+    /* 재사용 가능한 카드 스타일 */
+}

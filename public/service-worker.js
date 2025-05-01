@@ -1,7 +1,7 @@
 // service-worker.js
 
 // 파일 캐시 저장소 이름
-const CACHE_NAME = 'moyeoyo-cache-v1';
+const CACHE_NAME = 'MeetEase-cache-v1';
 
 // 캐시할 파일 리스트
 const urlsToCache = [

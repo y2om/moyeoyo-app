@@ -1,83 +1,119 @@
-# 마주침(MeetEase)
+# MeetEase (마주침)
 
-서울시 청년 1인 가구를 위한 공공 공간 기반 교류 플랫폼입니다. 관심사, 가능 시간, 위치 정보를 입력하면 자동 매칭되어 그룹 활동을 유도합니다.
-
----
-
-## 💡 프로젝트 개요
-
-**마주침(MeetEase)**은 서울시 1인 가구 청년들이 공통 관심사 및 참여 가능 시간에 맞춰 자연스럽게 교류할 수 있도록 돕는 서비스입니다. 사용자가 관심사와 가능 시간을 입력하면, 자동으로 유사한 조건의 사용자들과 매칭되어 소규모 그룹이 형성되고, 문화행사 정보를 추천받을 수 있습니다.
+## 프로젝트 소개
+`MeetEase`(마주침)는 사용자의 관심사, 성별, 나이대, 성격, 가능한 일정, 위치 정보 등을 토대로 근처에 있는 다른 사용자들과 그룹을 매칭해주는 웹 애플리케이션입니다. 본 프로젝트는 **프론트엔드**(React)와 **백엔드**(Flask + Firestore)를 결합하여, 원활한 온보딩 경험과 실시간 매칭 기능을 제공합니다.
 
 ---
 
-## ⚙️ 주요 기능
+## 주요 기능
 
-### ✅ 사용자 정보 입력
-- 관심사, 나이대, 가능한 날짜 및 시간, 위치 정보 입력
-- Firebase Firestore에 사용자 정보 저장
+1. **카카오톡 로그인**  
+   - 카카오 SDK를 이용해 OAuth 로그인 처리  
+   - Firebase Firestore에 사용자 문서 자동 생성  
+   - 로그인 후 온보딩 플래그(`onboarded`) 로컬스토리지에 저장  
 
-### 🔄 자동 그룹 매칭
-- Flask 백엔드 서버에서 `/api/group/match` 엔드포인트로 매칭 요청
-- Firestore에서 사용자 데이터 가져옴
-- 공통 관심사, 공통 날짜, 최대 4km 이내 거리 조건이 모두 만족되는 사용자들을 매칭
-- 매칭 결과를 Firestore의 `groups` 컬렉션에 저장
+2. **온보딩(프로필 입력)**  
+   - 단계별로 성별, 나이대, 관심사, 성격, 날짜·시간, 위치 정보를 입력  
+   - `datetime-local` 입력을 통해 날짜와 시간을 함께 선택  
+   - 현재 시점 이전의 일정 선택 시 경고 메시지 출력  
+   - 도로명 주소를 입력받아 Kakao Local API로 위도/경도 변환  
+   - 최종 입력 완료 시 Firestore에 프로필 정보 저장
 
-### 🔍 그룹 조회
-- `/api/groups` 엔드포인트를 통해 매칭된 그룹 정보 조회
-- 프론트엔드에서 Axios로 불러와 매칭 결과 화면에 표시
+3. **그룹 조회 및 매칭**  
+   - `/api/groups` 엔드포인트로 생성된 그룹 목록 조회  
+   - `/api/group/match` 엔드포인트로 현재 로그인한 사용자를 기준으로 그룹 매칭  
+   - 매칭 기준: 공통 관심사, 공통 가능 일정, 반경 4km 이내 위치  
+   - 그룹 인원 수에 따라 `confirmed` 또는 `candidate` 상태로 분류  
+
+4. **지오위치 기반 매칭 강화**  
+   - Haversine 공식을 이용해 두 지점 간의 직선 거리를 계산  
+   - GeoHash/Geofirestore 연동(예정)으로 대규모 위치 기반 쿼리 최적화 가능성 확보
+
+5. **UI/UX 및 스타일링**  
+   - React + Tailwind CSS 스타일 적용  
+   - 토스(Toss) 스타일 버튼 컴포넌트 제공  
+   - Framer Motion으로 부드러운 화면 전환 및 애니메이션 구현
 
 ---
 
-## 🛠️ 기술 스택
+## 기술 스택
 
-| 영역       | 사용 기술                            |
-|------------|--------------------------------------|
-| 프론트엔드 | React (Vite), Axios, Vercel 배포     |
-| 백엔드     | Flask, Firebase Admin SDK, Ngrok     |
-| 데이터베이스 | Firebase Firestore                   |
-| 기타       | Flask-CORS, REST API 구조, Haversine 거리 계산 |
+- **프론트엔드**: React, react-router-dom, axios, framer-motion, Tailwind CSS  
+- **백엔드**: Python, Flask, flask-cors  
+- **데이터베이스**: Firebase Firestore  
+- **인증**: Kakao OAuth  
+- **위치 API**: Kakao Local REST API
 
 ---
 
-## 🚀 실행 및 배포
+## 프로젝트 구조
 
-### 1. 백엔드 (Flask 서버) 실행
+```
+src/
+├── components/
+│   ├── auth/
+│   │   └── KakaoLoginButton.js    # 카카오 로그인 버튼
+│   ├── onboarding/
+│   │   ├── OnboardingController.js
+│   │   └── steps/
+│   │       └── FullOnboarding.js  # 단계별 온보딩 폼
+│   └── MatchPage.js               # 매칭 및 그룹 조회 UI
+├── pages/
+│   ├── KakaoLoginPage.js          # 로그인 페이지 라우트
+│   └── MatchPage.js               # 매칭 페이지 라우트
+├── firebase.js                    # Firebase 초기화 설정
+├── App.js                         # 라우팅 및 인증 플로우
+└── index.js                       # 엔트리 포인트
 
-```bash
-python MeetEase.py
+backend/
+└── MeetEase.py                    # Flask 서버 및 API 구현
 ```
 
-> `firebase_key.json` 위치를 정확하게 설정하세요.  
-> Ngrok으로 외부 접근을 위해 포트를 노출합니다:
+---
 
-```bash
-ngrok http 5000
-```
+## 실행 방법
 
-Ngrok 주소를 확인하여 `BASE_URL`로 사용합니다 (예: `https://xxxx.ngrok-free.app`)
+1. **백엔드**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   python MeetEase.py
+   ```
 
-### 2. 프론트엔드 실행
+2. **프론트엔드**
+   ```bash
+   cd src
+   npm install
+   npm start
+   ```
 
-```bash
-npm run dev
-```
-
-> 개발용: `http://localhost:3000`  
-> 배포용: Vercel (`https://moyeoyo-app.vercel.app`)
-
-**주의**
-- Vercel에서 백엔드 API 호출 시 `CORS` 문제를 방지하기 위해 Flask에 `CORS(app)`를 반드시 설정해야 합니다.
-- Firestore 및 Ngrok 주소는 항상 최신 상태로 반영되어야 정상 작동합니다.
+3. **환경 변수 설정**
+   - `REACT_APP_KAKAO_REST_API_KEY`: Kakao Local API REST 키  
+   - `REACT_APP_API_BASE_URL`: 배포 환경의 API URL
 
 ---
 
-## 📁 API 엔드포인트 요약
+## API 명세
 
-| 메서드 | 경로                  | 설명                         |
-|--------|-----------------------|------------------------------|
-| POST   | `/api/group/match`    | 사용자 기반 자동 그룹 매칭 수행 |
-| GET    | `/api/groups`         | Firestore에 저장된 그룹 정보 조회 |
+- **GET** `/api/groups`  
+  - 생성된 그룹 리스트 반환
+
+- **POST** `/api/group/match`  
+  - Request JSON: `{ "user_id": "user@example.com" }`  
+  - Response JSON: 매칭된 그룹 정보 배열
 
 ---
 
-🕒 마지막 수정: 2025-05-01
+## 앞으로의 개선 사항
+
+- GeoHash/Geofirestore로 위치 기반 대규모 쿼리 최적화  
+- 채팅, 실시간 알림 기능 추가  
+- 다국어 지원 (i18n)  
+- 모바일 반응형 최적화
+
+---
+
+**만든 이**: 마주침 개발팀
+
+**라이선스**: MIT License
+
